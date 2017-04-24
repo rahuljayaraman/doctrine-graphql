@@ -1,6 +1,6 @@
 <?php
 
-namespace DoctrineGraphQL;
+namespace RahulJayaraman\DoctrineGraphQL;
 
 class FieldResolver {
     private $instance;

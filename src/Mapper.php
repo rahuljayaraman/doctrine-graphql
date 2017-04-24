@@ -1,6 +1,6 @@
 <?php
 
-namespace DoctrineGraphQL;
+namespace RahulJayaraman\DoctrineGraphQL;
 
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ObjectType;
