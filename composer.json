@@ -1,0 +1,14 @@
+{
+    "name": "rahuljayaraman/doctrine-graphql",
+    "description": "Use Doctrine entities as GraphQL types",
+    "authors": [
+        {
+            "name": "Rahul Jayaraman",
+            "email": "rahul.jayaraman@hotmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "doctrine/dbal": ">=2.0"
+    }
+}
