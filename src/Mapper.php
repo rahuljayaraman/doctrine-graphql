@@ -5,8 +5,6 @@ namespace RahulJayaraman\DoctrineGraphQL;
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ObjectType;
 use Doctrine\ORM\PersistentCollection;
-use Folklore\GraphQL\Support\Facades\GraphQL;
-use Folklore\GraphQL\Exception\TypeNotFound;
 use Doctrine\ORM\EntityManager;
 
 class Mapper {
@@ -33,6 +31,20 @@ class Mapper {
      */
     private $typeMappings = [];
 
+    /**
+     * register
+     *
+     * @var callable
+     */
+    private static $register;
+
+    /**
+     * lookUp
+     *
+     * @var callable
+     */
+    private static $lookUp;
+
 
     /**
      * extractType
@@ -50,6 +62,21 @@ class Mapper {
     {
         $mapper = new Mapper($className, $entityManager);
         return $mapper->getType();
+    }
+
+    /**
+     * addRegistry
+     *
+     * @param Callable $register
+     * @param Callable $lookUp
+     */
+    public static function addRegistry(
+        Callable $register,
+        Callable $lookUp
+    )
+    {
+        self::$register = $register;
+        self::$lookUp = $lookUp;
     }
 
     /**
@@ -108,23 +135,22 @@ class Mapper {
 
     /**
      * findOrCreateType
+     *
      * @param string $typeName
      * @param callable $typeGenFn
      * @return ObjectType;
-     *
-     * This seems to be the only dependency on laravel-graphql
-     * TODO: Try & pass in registry finder & register as params
      */
     private function findOrCreateType($typeName, $typeGenFn)
     {
+        if (!is_callable(self::$lookUp) || !is_callable(self::$register)) {
+            throw \Exception("Please define a registry first");
+        }
+
         try {
-            $type = GraphQL::type($typeName);
-        } catch(TypeNotFound $e) {
+            $type = call_user_func_array(self::$lookUp, array($typeName));
+        } catch(\Exception $e) {
             $type = $typeGenFn($typeName);
-            //laravel-graphql defines a pattern guard using known types
-            //This will add our type to the white list & also to the type
-            //registry
-            GraphQL::addType($type, $typeName);
+            call_user_func_array(self::$register, array($typeName, $type));
         }
         return $type;
     }
