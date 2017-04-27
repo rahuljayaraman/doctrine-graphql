@@ -18,15 +18,7 @@ class GraphQLTypeMapping {
      */
     public $eval;
 
-    /**
-     * args
-     *
-     * Field Resolution Args
-     * @var array
-     */
-    public $args;
-
-    public function __construct($type, $eval = null, $args = null)
+    public function __construct($type, $eval = null)
     {
         $defaultEval = function ($val) {
             return $val;
@@ -34,6 +26,5 @@ class GraphQLTypeMapping {
 
         $this->type = $type;
         $this->eval = is_null($eval) ? $defaultEval : $eval;
-        $this->args = $args;
     }
 }
