@@ -4,14 +4,19 @@ namespace RahulJayaraman\DoctrineGraphQL;
 
 class FieldResolver {
     private $instance;
+    private $resolver;
 
-    public function __construct($instance)
+    public function __construct($instance, \ReflectionMethod $resolver = null)
     {
         $this->instance = $instance;
+        $this->resolver = $resolver;
     }
 
-    public function getKey($key)
+    public function resolve($key, $args = null)
     {
+        if (isset($this->resolver)) {
+            return $this->resolver->invoke($this->instance, $args);
+        }
         return $this->getDefaultGraphQLResolver($key);
     }
 
