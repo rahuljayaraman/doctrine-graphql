@@ -6,6 +6,10 @@ use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ObjectType;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\EntityManager;
+use Doctrine\Common\Annotations\AnnotationRegistry;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\IndexedReader;
+use RahulJayaraman\DoctrineGraphQL\Annotations\RegisterField;
 
 class Mapper {
 
@@ -60,6 +64,7 @@ class Mapper {
         EntityManager $entityManager
     )
     {
+        AnnotationRegistry::registerFile(dirname(__FILE__). "/annotations/RegisterField.php");
         $mapper = new Mapper($className, $entityManager);
         return $mapper->getType();
     }
@@ -110,7 +115,8 @@ class Mapper {
                 $fields = $this->getFields($fieldMappings);
                 $associationMappings = $metadata->associationMappings;
                 $associations = $this->getAssociations($associationMappings);
-                return array_merge($fields, $associations);
+                $extendedFields = $this->getExtendedFields();
+                return array_merge($fields, $associations, $extendedFields);
             };
 
             return new ObjectType([
@@ -142,17 +148,22 @@ class Mapper {
      */
     private function findOrCreateType($typeName, $typeGenFn)
     {
-        if (!is_callable(self::$lookUp) || !is_callable(self::$register)) {
-            throw \Exception("Please define a registry first");
-        }
-
         try {
-            $type = call_user_func_array(self::$lookUp, array($typeName));
+            $type = $this->findType($typeName);
         } catch(\Exception $e) {
             $type = $typeGenFn($typeName);
             call_user_func_array(self::$register, array($typeName, $type));
         }
         return $type;
+    }
+
+    private function findType($typeName)
+    {
+        if (!is_callable(self::$lookUp) || !is_callable(self::$register)) {
+            throw \Exception("Please define a registry first");
+        }
+
+        return call_user_func_array(self::$lookUp, array($typeName));
     }
 
     /**
@@ -212,9 +223,69 @@ class Mapper {
         foreach($mappings as $key => $doctrineMetdata) {
             $dTypeKey = $doctrineMetdata['type'];
             $typeMapping = $this->getGraphQLTypeMapping($dTypeKey);
+            if (is_null($typeMapping)) {
+                throw new \UnexpectedValueException(
+                    "The doctrine type ". $dKey.
+                    " has not been mapped correctly."
+                );
+            }
+
             $fields[$key] = $this->buildField($key, $typeMapping);
         }
         return $fields;
+    }
+
+    /**
+     * getExtendedFields
+     *
+     * @return array[string]array
+     */
+    private function getExtendedFields()
+    {
+        $reader = new IndexedReader(new AnnotationReader());
+        $refClass = new \ReflectionClass($this->className);
+        $fields = [];
+        foreach($refClass->getMethods() as $method)
+        {
+            $annotations = $reader->getMethodAnnotations($method);
+            $class = __NAMESPACE__. '\Annotations\RegisterField';
+            if (isset($annotations[$class])) {
+                $registration = $annotations[$class];
+                $key = $method->name;
+                $typeMapping = $this->extractTypeMapping($registration);
+                $fields[$key] = $this->buildField($key, $typeMapping, $method);
+            }
+        }
+        return $fields;
+    }
+
+    /**
+     * extractTypeMapping
+     *
+     * @param RegisterField $registration
+     * @return GraphQLTypeMapping
+     */
+    private function extractTypeMapping(RegisterField $registration)
+    {
+        $typeMapping = $this->getGraphQLTypeMapping($registration->type);
+        if (!is_null($typeMapping)) {
+            return $typeMapping;
+        }
+
+        $type = $this->findType($registration->type);
+        if ($registration->isList) {
+            $type = Type::listOf($type);
+        }
+
+        $args = array_map(function ($arg) {
+            $typeMapping = $this->getGraphQLTypeMapping($arg[1]);
+            return [
+                'name' => $arg[0],
+                'type' => $typeMapping->type
+            ];
+        }, $registration->args);
+
+        return new GraphQLTypeMapping($type, null, $args);
     }
 
     /**
@@ -222,16 +293,22 @@ class Mapper {
      *
      * @param string $key
      * @param GraphQLTypeMapping $typeMapping
+     * @param ReflectionMethod $resolver
+     * @param array $args
      * @param string $description
      * @return array
      */
-    private function buildField($key, $typeMapping, $description = '')
+    private function buildField($key,
+        $typeMapping,
+        \ReflectionMethod $resolver = null,
+        $args = null,
+        $description = '')
     {
         //Eval is used to resolve custom scalar types like date
-        $resolveFactory = function ($key, $eval) {
-            return function ($val, $args) use ($key, $eval) {
-                $fieldResolver = new FieldResolver($val);
-                $result = $fieldResolver->getKey($key);
+        $resolveFactory = function ($key, $eval) use ($resolver) {
+            return function ($val, $args) use ($key, $eval, $resolver) {
+                $fieldResolver = new FieldResolver($val, $resolver);
+                $result = $fieldResolver->resolve($key, $args);
                 if (!$result instanceof PersistentCollection) {
                     return $eval($result);
                 }
@@ -245,6 +322,7 @@ class Mapper {
         return [
             'description' => $description,
             'type' => $typeMapping->type,
+            'args' => $typeMapping->args,
             'resolve' => $resolveFactory($key, $typeMapping->eval)
         ];
     }
@@ -277,10 +355,7 @@ class Mapper {
         }
 
         if (!isset($this->typeMappings[$dKey])) {
-            throw new \UnexpectedValueException(
-                "The doctrine type ". $dKey.
-                " has not been mapped correctly. Defaulting to `string`"
-            );
+            return null;
         }
 
         return $this->typeMappings[$dKey];
