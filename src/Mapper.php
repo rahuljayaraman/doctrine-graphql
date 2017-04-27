@@ -178,26 +178,51 @@ class Mapper {
 
         foreach($associationMappings as $key => $association) {
             $className = $association['targetEntity'];
-
-            try {
-                $mapper = new Mapper($className, $this->em);
-            } catch (\UnexpectedValueException $e) {
-                //TODO: Maybe we should be throwing some error here
-                continue;
+            $isList = $this->isList($association['type']);
+            $type = $this->buildFieldForClass($key, $className, $isList);
+            if (!is_null($type)) {
+                $types[$key] = $type;
             }
-
-            if ($this->isList($association['type'])) {
-                $type = Type::listOf($mapper->getType());
-            } else {
-                $type = $mapper->getType();
-            }
-
-            $types[$key] = $this->buildField(
-                $key, new GraphQLTypeMapping($type)
-            );
         }
 
         return $types;
+    }
+
+    /**
+     * buildFieldForClass
+     *
+     * @param String $key
+     * @param String $className
+     * @param boolean $isList
+     * @param \ReflectionMethod $resolver
+     * @param array $args
+     * @return array;
+     */
+    private function buildFieldForClass(String $key,
+        $className,
+        $isList,
+        \ReflectionMethod $resolver = null,
+        $args = null)
+    {
+        try {
+            $mapper = new Mapper($className, $this->em);
+        } catch (\UnexpectedValueException $e) {
+            //TODO: Maybe we should be throwing some error here
+            return null;
+        }
+
+        if ($isList) {
+            $type = Type::listOf($mapper->getType());
+        } else {
+            $type = $mapper->getType();
+        }
+
+        return $this->buildField(
+            $key,
+            new GraphQLTypeMapping($type),
+            $resolver,
+            $args
+        );
     }
 
     /**
@@ -252,29 +277,32 @@ class Mapper {
             if (isset($annotations[$class])) {
                 $registration = $annotations[$class];
                 $key = $method->name;
-                $typeMapping = $this->extractTypeMapping($registration);
-                $fields[$key] = $this->buildField($key, $typeMapping, $method);
+                $field = $this->buildExtendedField($key, $registration, $method);
+                if (!is_null($field)) {
+                    $fields[$key] = $field;
+                }
             }
         }
+
         return $fields;
     }
 
     /**
-     * extractTypeMapping
+     * buildExtendedField
      *
+     * @param string $key
      * @param RegisterField $registration
-     * @return GraphQLTypeMapping
+     * @param \ReflectionMethod $method
+     * @return array
      */
-    private function extractTypeMapping(RegisterField $registration)
+    private function buildExtendedField(String $key,
+        RegisterField $registration,
+        \ReflectionMethod $method)
     {
         $typeMapping = $this->getGraphQLTypeMapping($registration->type);
+        //Scalar return value
         if (!is_null($typeMapping)) {
-            return $typeMapping;
-        }
-
-        $type = $this->findType($registration->type);
-        if ($registration->isList) {
-            $type = Type::listOf($type);
+            return $this->buildField($key, $typeMapping);
         }
 
         $args = array_map(function ($arg) {
@@ -285,7 +313,28 @@ class Mapper {
             ];
         }, $registration->args);
 
-        return new GraphQLTypeMapping($type, null, $args);
+        //Return value is an association
+        $registeredClass = $this->getClassNameSpace().
+            "\\". $registration->type;
+        return $this->buildFieldForClass(
+            $key,
+            $registeredClass,
+            $registration->isList,
+            $method,
+            $args
+        );
+    }
+
+
+    /**
+     * getClassNameSpace
+     *
+     * @return string
+     */
+    private function getClassNameSpace()
+    {
+        $split = explode("\\", $this->className);
+        return implode("\\", array_splice($split, 0, -1));
     }
 
     /**
@@ -322,7 +371,7 @@ class Mapper {
         return [
             'description' => $description,
             'type' => $typeMapping->type,
-            'args' => $typeMapping->args,
+            'args' => $args,
             'resolve' => $resolveFactory($key, $typeMapping->eval)
         ];
     }
