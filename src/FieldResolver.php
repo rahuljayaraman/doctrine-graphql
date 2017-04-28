@@ -12,10 +12,11 @@ class FieldResolver {
         $this->resolver = $resolver;
     }
 
-    public function resolve($key, $args = null)
+    public function resolve($key, $args = [])
     {
         if (isset($this->resolver)) {
-            return $this->resolver->invoke($this->instance, $args);
+            return $this->resolver->invokeArgs($this->instance,
+                array_values($args));
         }
         return $this->getDefaultGraphQLResolver($key);
     }
