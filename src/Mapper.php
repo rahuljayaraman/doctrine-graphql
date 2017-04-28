@@ -315,10 +315,13 @@ class Mapper {
         }
 
         $args = array_map(function ($arg) {
-            $typeMapping = $this->getGraphQLTypeMapping($arg[1]);
+            $typeMapping = $this->getGraphQLTypeMapping($arg['type']);
+            $isNullable = $arg['nullable'];
+            $type = $isNullable ? $typeMapping->type :
+                Type::nonNull($typeMapping->type);
             return [
-                'name' => $arg[0],
-                'type' => $typeMapping->type
+                'name' => $arg['name'],
+                'type' => $type
             ];
         }, $registration->args);
 
