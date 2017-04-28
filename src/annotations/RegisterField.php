@@ -16,7 +16,7 @@ class RegisterField {
     public function __construct(array $values)
     {
         $this->type = $values['type'];
-        $this->args = isset($values['args']) ? $values['args'] : false;
+        $this->args = isset($values['args']) ? $values['args'] : [];
         $this->isList = isset($values['isList']) ? $values['isList'] : false;
     }
 }
