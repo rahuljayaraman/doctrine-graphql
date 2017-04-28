@@ -111,11 +111,11 @@ class Mapper {
         $typeGenFn = function ($typeName) {
             $fieldGetter = function () {
                 $metadata = $this->getDoctrineMetadata();
-                $fieldMappings = $metadata->fieldMappings;
+                $fieldMappings = $this->formatKeys($metadata->fieldMappings);
                 $fields = $this->getFields($fieldMappings);
                 $associationMappings = $metadata->associationMappings;
-                $associations = $this->getAssociations($associationMappings);
-                $extendedFields = $this->getExtendedFields();
+                $associations = $this->formatKeys($this->getAssociations($associationMappings));
+                $extendedFields = $this->formatKeys($this->getExtendedFields());
                 return array_merge($fields, $associations, $extendedFields);
             };
 
@@ -155,6 +155,15 @@ class Mapper {
             call_user_func_array(self::$register, array($typeName, $type));
         }
         return $type;
+    }
+
+    private function formatKeys(array $collection)
+    {
+        $transformed = [];
+        foreach($collection as $key => $item) {
+            $transformed[$this->camelCase($key)] = $item;
+        }
+        return $transformed;
     }
 
     private function findType($typeName)
@@ -455,5 +464,17 @@ class Mapper {
     {
         $LIST_TYPES = array(4, 8);
         return in_array($associationType, $LIST_TYPES);
+    }
+
+    /**
+     * camelCase
+     *
+     * @param string $string
+     * @return string
+     */
+    private function camelCase($string)
+    {
+        $func = create_function('$c', 'return strtoupper($c[1]);');
+        return preg_replace_callback('/_([a-z])/', $func, $string);
     }
 }
