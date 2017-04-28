@@ -12,12 +12,14 @@ class RegisterField {
 
     public $isList;
     public $args;
+    public $name;
 
     public function __construct(array $values)
     {
         $this->type = $values['type'];
         $this->args = $this->buildArgs($values);
         $this->isList = isset($values['isList']) ? $values['isList'] : false;
+        $this->name = isset($values['name']) ? $values['name'] : null;
     }
 
     private function buildArgs($values)

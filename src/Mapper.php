@@ -285,7 +285,8 @@ class Mapper {
             $class = __NAMESPACE__. '\Annotations\RegisterField';
             if (isset($annotations[$class])) {
                 $registration = $annotations[$class];
-                $key = $method->name;
+                $key = is_null($registration->name) ? $method->name :
+                    $registration->name;
                 $field = $this->buildExtendedField($key, $registration, $method);
                 if (!is_null($field)) {
                     $fields[$key] = $field;
