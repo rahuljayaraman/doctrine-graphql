@@ -312,7 +312,7 @@ class Mapper {
         $typeMapping = $this->getGraphQLTypeMapping($registration->type);
         //Scalar return value
         if (!is_null($typeMapping)) {
-            return $this->buildField($key, $typeMapping);
+            return $this->buildField($key, $typeMapping, $method);
         }
 
         $args = array_map(function ($arg) {
