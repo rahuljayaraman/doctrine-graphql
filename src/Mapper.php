@@ -64,24 +64,33 @@ class Mapper {
         EntityManager $entityManager
     )
     {
-        AnnotationRegistry::registerFile(dirname(__FILE__). "/annotations/RegisterField.php");
         $mapper = new Mapper($className, $entityManager);
         return $mapper->getType();
     }
 
     /**
-     * addRegistry
+     * setup registry & annotations
      *
      * @param Callable $register
      * @param Callable $lookUp
      */
-    public static function addRegistry(
+    public static function setup(
         Callable $register,
         Callable $lookUp
     )
     {
         self::$register = $register;
         self::$lookUp = $lookUp;
+        self::setupAnnotations();
+    }
+
+    /**
+     * setupAnnotations
+     *
+     */
+    private static function setupAnnotations()
+    {
+        AnnotationRegistry::registerFile(__DIR__. "/annotations/Annotations.php");
     }
 
     /**
