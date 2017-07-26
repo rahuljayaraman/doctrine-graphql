@@ -14,26 +14,11 @@ use RahulJayaraman\DoctrineGraphQL\Annotations\RegisterField;
 class Mapper {
 
     /**
-     * className
-     * package\className of doctrine entity to be mapped
-     *
-     * @var string
-     */
-    private $className;
-
-    /**
      * em
      * Doctrine EntityManager
      * @var EntityManager
      */
-    private $em;
-
-    /**
-     * typeMappings
-     *
-     * @var array[string]GraphQLTypeMapping
-     */
-    private $typeMappings = [];
+    private static $em;
 
     /**
      * register
@@ -49,6 +34,22 @@ class Mapper {
      */
     private static $lookUp;
 
+    /**
+     * className
+     * package\className of doctrine entity to be mapped
+     *
+     * @var string
+     */
+    private $className;
+
+    /**
+     * typeMappings
+     *
+     * @var array[string]GraphQLTypeMapping
+     */
+    private $typeMappings = [];
+
+
 
     /**
      * extractType
@@ -56,7 +57,7 @@ class Mapper {
      * Recursively extracts types for associations as well
      *
      * @param string $className
-     * @param EntityManager $entityManager
+     * @param EntityManager $entityManager [deprecated]
      * @return ObjectType;
      */
     public static function extractType(
@@ -64,21 +65,24 @@ class Mapper {
         EntityManager $entityManager
     )
     {
-        $mapper = new Mapper($className, $entityManager);
+        $mapper = new Mapper($className);
         return $mapper->getType();
     }
 
     /**
      * setup registry & annotations
      *
+     * @param EntityManager $em
      * @param Callable $register
      * @param Callable $lookUp
      */
     public static function setup(
+        EntityManager $em,
         Callable $register,
         Callable $lookUp
     )
     {
+        self::$em = $em;
         self::$register = $register;
         self::$lookUp = $lookUp;
         self::setupAnnotations();
@@ -97,12 +101,10 @@ class Mapper {
      * __construct
      *
      * @param string $className
-     * @param EntityManager $entityManager
      */
-    public function __construct($className, EntityManager $entityManager)
+    public function __construct($className)
     {
         $this->className = $className;
-        $this->em = $entityManager;
         if (!$this->isValid()) {
             throw new \UnexpectedValueException('Class '. $className.
                 ' is not a valid doctrine entity.');
@@ -148,7 +150,7 @@ class Mapper {
      */
     public function isValid()
     {
-        return !$this->em->getMetadataFactory()->isTransient($this->className);
+        return !self::$em->getMetadataFactory()->isTransient($this->className);
     }
 
     /**
@@ -274,7 +276,7 @@ class Mapper {
         $args = null)
     {
         try {
-            $mapper = new Mapper($className, $this->em);
+            $mapper = new Mapper($className);
         } catch (\UnexpectedValueException $e) {
             //TODO: Maybe we should be throwing some error here
             return null;
@@ -455,7 +457,7 @@ class Mapper {
      */
     private function getDoctrineMetadata()
     {
-        $metadata = $this->em->getClassMetadata($this->className);
+        $metadata = self::$em->getClassMetadata($this->className);
 
         if (empty($metadata)) {
             throw new \UnexpectedValueException('No mapping information to process');
