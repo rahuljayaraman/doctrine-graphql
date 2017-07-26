@@ -144,8 +144,8 @@ class Mapper {
                     $blacklistedFieldNames
                 );
                 $associations = $this->getAssociations($associationMappings);
-                $extendedFields = $this->formatKeys($this->getExtendedFields());
-                return array_merge($fields, $associations, $extendedFields);
+                $registeredFields = $this->formatKeys($this->getRegisteredFields());
+                return array_merge($fields, $associations, $registeredFields);
             };
 
             return new ObjectType([
@@ -395,7 +395,7 @@ class Mapper {
      *
      * @return array[string]array
      */
-    private function getExtendedFields()
+    private function getRegisteredFields()
     {
         $reader = new IndexedReader($this->getAnnotationReader());
         $refClass = new \ReflectionClass($this->className);
@@ -408,7 +408,7 @@ class Mapper {
                 $registration = $annotations[$class];
                 $key = is_null($registration->name) ? $method->name :
                     $registration->name;
-                $field = $this->buildExtendedField($key, $registration, $method);
+                $field = $this->buildRegisteredField($key, $registration, $method);
                 if (!is_null($field)) {
                     $fields[$key] = $field;
                 }
@@ -426,7 +426,7 @@ class Mapper {
      * @param \ReflectionMethod $method
      * @return array
      */
-    private function buildExtendedField(String $key,
+    private function buildRegisteredField(String $key,
         RegisterField $registration,
         \ReflectionMethod $method)
     {
