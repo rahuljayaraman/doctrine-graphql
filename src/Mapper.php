@@ -58,27 +58,8 @@ class Mapper {
      */
     private $typeMappings = [];
 
-
     /**
-     * extractType
-     * Extract type from a root entity
-     * Recursively extracts types for associations as well
-     *
-     * @param string $className
-     * @param EntityManager $entityManager [deprecated]
-     * @return ObjectType;
-     */
-    public static function extractType(
-        string $className,
-        EntityManager $entityManager
-    )
-    {
-        $mapper = new Mapper($className);
-        return $mapper->getType();
-    }
-
-    /**
-     * setup registry & annotations
+     * Setup registry & annotations
      *
      * @param EntityManager $em
      * @param Callable $register
@@ -100,13 +81,31 @@ class Mapper {
     }
 
     /**
-     * setupAnnotations
+     * Setup annotations
      *
      */
     private static function setupAnnotations()
     {
         AnnotationRegistry::registerFile(__DIR__. "/annotations/Annotations.php");
     }
+
+    /**
+     * Extract type from a root entity
+     * Recursively extracts types for associations as well
+     *
+     * @param string $className
+     * @param EntityManager $entityManager [deprecated]
+     * @return ObjectType;
+     */
+    public static function extractType(
+        string $className,
+        EntityManager $entityManager
+    )
+    {
+        $mapper = new Mapper($className);
+        return $mapper->getType();
+    }
+
 
     /**
      * __construct
@@ -123,7 +122,7 @@ class Mapper {
     }
 
     /**
-     * getType
+     * Builds type from given class
      *
      * @return ObjectType;
      */
@@ -159,7 +158,6 @@ class Mapper {
     }
 
     /**
-     * isValid
      * Checks if a className is a valid doctrine entity
      *
      * @return boolean
@@ -170,7 +168,7 @@ class Mapper {
     }
 
     /**
-     * findOrCreateType
+     * Finds type from registry or builds one
      *
      * @param string $typeName
      * @param callable $typeGenFn
@@ -188,7 +186,7 @@ class Mapper {
     }
 
     /**
-     * filter and format doctrine mappings
+     * Filter and format doctrine mappings
      *
      * @param array $mappings
      * @param string[] $blacklistedFieldNames
@@ -211,7 +209,7 @@ class Mapper {
     }
 
     /**
-     * checks if field name is blacklisted
+     * Checks if field name is blacklisted
      *
      * @param string $fieldName
      * @return boolean
@@ -222,7 +220,7 @@ class Mapper {
     }
 
     /**
-     * get blacklisted fields for current entity
+     * Get blacklisted fields for current entity
      *
      * @return array
      */
@@ -244,7 +242,7 @@ class Mapper {
     }
 
     /**
-     * gets annotation reader
+     * Gets annotation reader
      *
      * @return AnnotationReader | FileCacheReader | CachedReader
      */
@@ -258,7 +256,7 @@ class Mapper {
     }
 
     /**
-     * checks if supplied annotation reader is valid
+     * Checks if supplied annotation reader is valid
      *
      * @return boolean
      */
@@ -268,6 +266,12 @@ class Mapper {
             self::$cachedAnnotationReader instanceof CachedReader;
     }
 
+    /**
+     * Converts keys of given array to camelCase
+     *
+     * @param array $collection
+     * @return array
+     */
     private function formatKeys(array $collection)
     {
         $transformed = [];
@@ -277,6 +281,11 @@ class Mapper {
         return $transformed;
     }
 
+    /**
+     * Try & find type in supplied registry
+     *
+     * @param mixed $typeName
+     */
     private function findType($typeName)
     {
         if (!is_callable(self::$lookUp) || !is_callable(self::$register)) {
@@ -287,7 +296,7 @@ class Mapper {
     }
 
     /**
-     * getAssociations
+     * Build types from association doctrine mappings
      *
      * @param array $associationMappings
      * @return array[string]array
@@ -309,20 +318,22 @@ class Mapper {
     }
 
     /**
-     * buildFieldForClass
+     * Build Field for a given class
      *
-     * @param String $key
-     * @param String $className
+     * @param string $key
+     * @param string $className
      * @param boolean $isList
      * @param \ReflectionMethod $resolver
      * @param array $args
      * @return array;
      */
-    private function buildFieldForClass(String $key,
-        $className,
+    private function buildFieldForClass(
+        string $key,
+        string $className,
         $isList,
         \ReflectionMethod $resolver = null,
-        $args = null)
+        $args = null
+    )
     {
         try {
             $mapper = new Mapper($className);
@@ -346,7 +357,7 @@ class Mapper {
     }
 
     /**
-     * getTypeName
+     * Get type name from class name
      *
      * @return string
      */
@@ -357,7 +368,7 @@ class Mapper {
     }
 
     /**
-     * getFields
+     * Build fields from doctrine mappings
      *
      * @param array $mappings
      * @return array[string]array
@@ -380,7 +391,7 @@ class Mapper {
     }
 
     /**
-     * getExtendedFields
+     * Build fields from methods registered with RegisterField
      *
      * @return array[string]array
      */
@@ -408,7 +419,7 @@ class Mapper {
     }
 
     /**
-     * buildExtendedField
+     * Build field from registered field
      *
      * @param string $key
      * @param RegisterField $registration
@@ -450,7 +461,7 @@ class Mapper {
 
 
     /**
-     * getClassNameSpace
+     * Get namespace for current entity
      *
      * @return string
      */
@@ -461,7 +472,7 @@ class Mapper {
     }
 
     /**
-     * buildField
+     * Build a GraphQL field
      *
      * @param string $key
      * @param GraphQLTypeMapping $typeMapping
@@ -500,7 +511,7 @@ class Mapper {
     }
 
     /**
-     * getDoctrineMetadata
+     * Get Doctrine metadata
      *
      * @return Doctrine\ORM\Mapping\ClassMetadata
      */
@@ -515,7 +526,7 @@ class Mapper {
     }
 
     /**
-     * getGraphQLTypeMapping
+     * Get mapping of doctrine types => GraphQL types
      *
      * @param string $dKey
      * @return GraphQLTypeMapping
@@ -533,6 +544,10 @@ class Mapper {
         return $this->typeMappings[$dKey];
     }
 
+    /**
+     * Set type mappings
+     *
+     */
     private function setTypeMappings()
     {
         //TODO: Allow custom date handling
@@ -569,7 +584,7 @@ class Mapper {
     }
 
     /**
-     * isList
+     * Checks if association is list
      *
      * @param integer $associationType
      * @return boolean
@@ -581,7 +596,7 @@ class Mapper {
     }
 
     /**
-     * camelCase
+     * Convert to cameCase
      *
      * @param string $string
      * @return string
