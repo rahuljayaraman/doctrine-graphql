@@ -64,24 +64,33 @@ class Mapper {
         EntityManager $entityManager
     )
     {
-        AnnotationRegistry::registerFile(dirname(__FILE__). "/annotations/RegisterField.php");
         $mapper = new Mapper($className, $entityManager);
         return $mapper->getType();
     }
 
     /**
-     * addRegistry
+     * setup registry & annotations
      *
      * @param Callable $register
      * @param Callable $lookUp
      */
-    public static function addRegistry(
+    public static function setup(
         Callable $register,
         Callable $lookUp
     )
     {
         self::$register = $register;
         self::$lookUp = $lookUp;
+        self::setupAnnotations();
+    }
+
+    /**
+     * setupAnnotations
+     *
+     */
+    private static function setupAnnotations()
+    {
+        AnnotationRegistry::registerFile(__DIR__. "/annotations/Annotations.php");
     }
 
     /**
@@ -98,6 +107,7 @@ class Mapper {
             throw new \UnexpectedValueException('Class '. $className.
                 ' is not a valid doctrine entity.');
         }
+        $this->blacklistedFieldNames = $this->getBlacklistedFieldNames();
     }
 
     /**
@@ -111,10 +121,12 @@ class Mapper {
         $typeGenFn = function ($typeName) {
             $fieldGetter = function () {
                 $metadata = $this->getDoctrineMetadata();
-                $fieldMappings = $this->formatKeys($metadata->fieldMappings);
+                $fieldMappings = $this->filterAndFormatMappings(
+                    $metadata->fieldMappings);
                 $fields = $this->getFields($fieldMappings);
-                $associationMappings = $metadata->associationMappings;
-                $associations = $this->formatKeys($this->getAssociations($associationMappings));
+                $associationMappings = $this->filterAndFormatMappings(
+                    $metadata->associationMappings);
+                $associations = $this->getAssociations($associationMappings);
                 $extendedFields = $this->formatKeys($this->getExtendedFields());
                 return array_merge($fields, $associations, $extendedFields);
             };
@@ -155,6 +167,54 @@ class Mapper {
             call_user_func_array(self::$register, array($typeName, $type));
         }
         return $type;
+    }
+
+    /**
+     * filter and format doctrine mappings
+     *
+     * @param array $mappings
+     * @return array
+     */
+    private function filterAndFormatMappings(array $mappings)
+    {
+        $filtered = array_filter($mappings, function ($mapping) {
+            return !$this->isBlacklisted($mapping['fieldName']);
+        });
+
+        return $this->formatKeys($filtered);
+    }
+
+    /**
+     * checks if field name is blacklisted
+     *
+     * @param string $fieldName
+     * @return boolean
+     */
+    private function isBlacklisted(string $fieldName)
+    {
+        return in_array($fieldName, $this->blacklistedFieldNames);
+    }
+
+    /**
+     * get blacklisted fields for current entity
+     *
+     * @return array
+     */
+    private function getBlacklistedFieldNames()
+    {
+        $reader = new IndexedReader(new AnnotationReader());
+        $refClass = new \ReflectionClass($this->className);
+        $class = __NAMESPACE__. '\Annotations\BlacklistField';
+
+        $filtered = array_filter($refClass->getProperties(),
+        function ($property) use ($class, $reader) {
+            $annotations = $reader->getPropertyAnnotations($property);
+            return isset($annotations[$class]);
+        });
+
+        return array_map(function ($property) {
+            return $property->getName();
+        }, $filtered);
     }
 
     private function formatKeys(array $collection)
@@ -263,7 +323,6 @@ class Mapper {
                     " has not been mapped correctly."
                 );
             }
-
             $fields[$key] = $this->buildField($key, $typeMapping);
         }
         return $fields;
