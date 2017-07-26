@@ -4,7 +4,7 @@ namespace RahulJayaraman\DoctrineGraphQL\Annotations;
 
 /**
  * @Annotation
- * @Target({"METHOD", "PROPERTY"})
+ * @Target({"METHOD"})
  */
 class RegisterField {
     /** @Required */
