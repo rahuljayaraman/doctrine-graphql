@@ -8,17 +8,26 @@ use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\FileCacheReader;
+use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Annotations\IndexedReader;
 use RahulJayaraman\DoctrineGraphQL\Annotations\RegisterField;
 
 class Mapper {
 
     /**
-     * em
      * Doctrine EntityManager
+     *
      * @var EntityManager
      */
     private static $em;
+
+    /**
+     * Custom AnnotationReader
+     *
+     * @var FileCacheReader | CachedReader
+     */
+    private static $cachedAnnotationReader;
 
     /**
      * register
@@ -73,17 +82,20 @@ class Mapper {
      *
      * @param EntityManager $em
      * @param Callable $register
+     * @param FileCacheReader | CachedReader $cachedAnnotationReader
      * @param Callable $lookUp
      */
     public static function setup(
         EntityManager $em,
         Callable $register,
-        Callable $lookUp
+        Callable $lookUp,
+        $cachedAnnotationReader = null
     )
     {
         self::$em = $em;
         self::$register = $register;
         self::$lookUp = $lookUp;
+        self::$cachedAnnotationReader = $cachedAnnotationReader;
         self::setupAnnotations();
     }
 
@@ -216,7 +228,7 @@ class Mapper {
      */
     private function getBlacklistedFieldNames()
     {
-        $reader = new IndexedReader(new AnnotationReader());
+        $reader = new IndexedReader($this->getAnnotationReader());
         $refClass = new \ReflectionClass($this->className);
         $class = __NAMESPACE__. '\Annotations\BlacklistField';
 
@@ -229,6 +241,31 @@ class Mapper {
         return array_map(function ($property) {
             return $property->getName();
         }, $filtered);
+    }
+
+    /**
+     * gets annotation reader
+     *
+     * @return AnnotationReader | FileCacheReader | CachedReader
+     */
+    private function getAnnotationReader()
+    {
+        if (!$this->isValidCachedReader()) {
+            return new AnnotationReader();
+        }
+
+        return self::$cachedAnnotationReader;
+    }
+
+    /**
+     * checks if supplied annotation reader is valid
+     *
+     * @return boolean
+     */
+    private function isValidCachedReader()
+    {
+        return self::$cachedAnnotationReader instanceof FileCacheReader ||
+            self::$cachedAnnotationReader instanceof CachedReader;
     }
 
     private function formatKeys(array $collection)
@@ -349,7 +386,7 @@ class Mapper {
      */
     private function getExtendedFields()
     {
-        $reader = new IndexedReader(new AnnotationReader());
+        $reader = new IndexedReader($this->getAnnotationReader());
         $refClass = new \ReflectionClass($this->className);
         $fields = [];
         foreach($refClass->getMethods() as $method)
