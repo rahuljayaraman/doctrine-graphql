@@ -49,6 +49,13 @@ class Mapper {
      */
     private $typeMappings = [];
 
+    /**
+     * field names which have been blacklisted for current entity
+     *
+     * @var string[]
+     */
+    private $blacklistedFieldNames;
+
 
 
     /**
