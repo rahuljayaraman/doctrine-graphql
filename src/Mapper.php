@@ -49,14 +49,6 @@ class Mapper {
      */
     private $typeMappings = [];
 
-    /**
-     * field names which have been blacklisted for current entity
-     *
-     * @var string[]
-     */
-    private $blacklistedFieldNames;
-
-
 
     /**
      * extractType
@@ -116,7 +108,6 @@ class Mapper {
             throw new \UnexpectedValueException('Class '. $className.
                 ' is not a valid doctrine entity.');
         }
-        $this->blacklistedFieldNames = $this->getBlacklistedFieldNames();
     }
 
     /**
@@ -129,12 +120,18 @@ class Mapper {
         $typeName = $this->getTypeName();
         $typeGenFn = function ($typeName) {
             $fieldGetter = function () {
+                $blacklistedFieldNames =
+                    $this->getBlacklistedFieldNames();
                 $metadata = $this->getDoctrineMetadata();
                 $fieldMappings = $this->filterAndFormatMappings(
-                    $metadata->fieldMappings);
+                    $metadata->fieldMappings,
+                    $blacklistedFieldNames
+                );
                 $fields = $this->getFields($fieldMappings);
                 $associationMappings = $this->filterAndFormatMappings(
-                    $metadata->associationMappings);
+                    $metadata->associationMappings,
+                    $blacklistedFieldNames
+                );
                 $associations = $this->getAssociations($associationMappings);
                 $extendedFields = $this->formatKeys($this->getExtendedFields());
                 return array_merge($fields, $associations, $extendedFields);
@@ -182,13 +179,21 @@ class Mapper {
      * filter and format doctrine mappings
      *
      * @param array $mappings
+     * @param string[] $blacklistedFieldNames
      * @return array
      */
-    private function filterAndFormatMappings(array $mappings)
+    private function filterAndFormatMappings(
+        array $mappings,
+        array $blacklistedFieldNames
+    )
     {
-        $filtered = array_filter($mappings, function ($mapping) {
-            return !$this->isBlacklisted($mapping['fieldName']);
-        });
+        $filtered = array_filter(
+            $mappings,
+            function ($mapping) use ($blacklistedFieldNames) {
+                $fieldName = $mapping['fieldName'];
+                return !in_array($fieldName, $blacklistedFieldNames);
+            }
+        );
 
         return $this->formatKeys($filtered);
     }
