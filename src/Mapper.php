@@ -448,8 +448,8 @@ class Mapper {
         }, $registration->args);
 
         //Return value is an association
-        $registeredClass = $this->getClassNameSpace().
-            "\\". $registration->type;
+
+        $registeredClass = $this->getRegistrationReturnType($registration);
         return $this->buildFieldForClass(
             $key,
             $registeredClass,
@@ -457,6 +457,44 @@ class Mapper {
             $method,
             $args
         );
+    }
+
+    /**
+     * get classname for the registered field's return type
+     *
+     * @param RegisterField $registration
+     * @return string
+     */
+    private function getRegistrationReturnType(RegisterField $registration)
+    {
+        $containsNs = $this->containsNameSpace($registration->type);
+        $validate = function ($className) {
+            if (!class_exists($className)) {
+                throw new \Exception($className. " is not defined in ".
+                    $this->className);
+            }
+            return $className;
+        };
+
+        if ($containsNs) {
+            return $validate($registration->type);
+        }
+
+        $withNs = $this->getClassNameSpace().
+            "\\". $registration->type;
+
+        return $validate($withNs);
+    }
+
+    /**
+     * Does given classname string contain a namespace
+     *
+     * @param string $className
+     * @param boolean
+     */
+    private function containsNameSpace(string $className)
+    {
+        return count(explode("\\", $className)) > 1;
     }
 
 
