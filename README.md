@@ -92,10 +92,13 @@ For now, given a field name, say `fieldName`, the mapper will look for a `getFie
 
 For registering additional fields, on can use the RegisterField annotation. 
 
-RegisterField accepts `name`, `type` and `args`
+RegisterField accepts `name`, `type` and `args`.
+
 `name` accepts a string.
+
 `type` accepts either an [internal type](https://github.com/webonyx/graphql-php#internal-types) or any of the extracted entities.
-`args` accepts a tuple in the form of `{string, type}`
+
+`args` accepts an array of tuples in the form of `{{string, type}}`
 
 Here's an example
 
