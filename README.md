@@ -17,44 +17,51 @@ PHP >=5.4
 
 The mapper builds GraphQL types out of doctrine entities. It's built on top of [webonyx/graphql-php](webonyx/graphql-php) and maps doctrine entities to an [ObjectType](http://webonyx.github.io/graphql-php/type-system/object-types/) graph at runtime.
 
-Let's consider the following schema
+Here's an example. Consider the following schema
 
 ```
-Employee has_many Companies, Employee belongs_to User
-
-Employee
-│   id
-│   work_email    
+Employee  
 │
 └───Company (getCompanies)
-│      name
-│      description
 |
 └───User (getUser)
-    │   name
-    │   email
 ```
 
-We can extract the type for employee by using
+We can extract the type for Employee by using
 
 ```php
 Mapper::extractType(Employee::class)
 ```
-[Associations](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/association-mapping.html) are recursively extracted as well. So `$employee->getCompanies()` would return [ListOf](http://webonyx.github.io/graphql-php/type-system/lists-and-nonnulls/) type Company & `$employee->getUser()` would return type User
+[Associations](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/association-mapping.html) are recursively extracted as well. So `$employee->getCompanies()` would return [ListOf](http://webonyx.github.io/graphql-php/type-system/lists-and-nonnulls/) Type Company & `$employee->getUser()` would return Type User
 
-#### This library is not responsible for any of your GraphQL setup.
+#### NOTE: This library is not responsible for any of your GraphQL setup like setting up routes, root nodes etc.
 
 ### Usage
 
 #### Setup
 
-Setup accepts 3 args. Doctrine's EntityManager, a setter method & a getter method to a type store (a data structure which stores types). Below, I use [Folkloreatelier/laravel-graphql](https://github.com/Folkloreatelier/laravel-graphql)'s store as an example.
+Setup accepts 3 args. Doctrine's EntityManager, a setter method & a getter method to a type store (a data structure which stores types). 
 
 ```php
 //Setup code, I use this in a laravel service provider
 use RahulJayaraman\DoctrineGraphQL\Mapper;
-use Folklore\GraphQL\Support\Facades\GraphQL;
 use Doctrine\ORM\EntityManager;
+
+Mapper::setup(
+    app(EntityManager::class),
+    function ($typeName, $type) {
+        Cache::add($type, $typeName);
+    },
+    function ($typeName) {
+        return Cache::get($typeName);
+    }
+);
+```
+
+`Cache` above could be replaced by any store. [Folkloreatelier/laravel-graphql](https://github.com/Folkloreatelier/laravel-graphql)'s store as like this
+
+```php
+use Folklore\GraphQL\Support\Facades\GraphQL;
 
 Mapper::setup(
     app(EntityManager::class),
@@ -75,7 +82,7 @@ To extract the type
 Mapper::extractType(Entity::class);
 ```
 
-We could place it [here]([related doc](https://github.com/Folkloreatelier/laravel-graphql#creating-a-query)) if using with [Folkloreatelier/laravel-graphql](https://github.com/Folkloreatelier/laravel-graphql).
+We could place it [here](https://github.com/Folkloreatelier/laravel-graphql#creating-a-query) if using with [Folkloreatelier/laravel-graphql](https://github.com/Folkloreatelier/laravel-graphql).
 
 ```php
 public function type()
