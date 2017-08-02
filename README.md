@@ -58,7 +58,8 @@ Mapper::setup(
 );
 ```
 
-`Cache` above could be replaced by any store. [Folkloreatelier/laravel-graphql](https://github.com/Folkloreatelier/laravel-graphql)'s store as like this
+`Cache` above could be replaced by any store. 
+Eg. using [Folkloreatelier/laravel-graphql](https://github.com/Folkloreatelier/laravel-graphql)'s store
 
 ```php
 use Folklore\GraphQL\Support\Facades\GraphQL;
