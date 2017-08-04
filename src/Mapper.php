@@ -44,6 +44,14 @@ class Mapper {
     private static $lookUp;
 
     /**
+     * It wraps the instance & returns a new instance
+     * Could be used for logging/authorization etc.
+     *
+     * @var callable
+     */
+    private static $proxy;
+
+    /**
      * className
      * package\className of doctrine entity to be mapped
      *
@@ -70,12 +78,17 @@ class Mapper {
         EntityManager $em,
         Callable $register,
         Callable $lookUp,
+        Callable $proxy = null,
         $cachedAnnotationReader = null
     )
     {
+        $identity = function ($arg) {
+            return $arg;
+        };
         self::$em = $em;
         self::$register = $register;
         self::$lookUp = $lookUp;
+        self::$proxy = isset($proxy) ? $proxy : $identity;
         self::$cachedAnnotationReader = $cachedAnnotationReader;
         self::setupAnnotations();
     }
@@ -526,9 +539,10 @@ class Mapper {
         $description = '')
     {
         //Eval is used to resolve custom scalar types like date
-        $resolveFactory = function ($key, $eval) use ($resolver) {
-            return function ($val, $args) use ($key, $eval, $resolver) {
-                $fieldResolver = new FieldResolver($val, $resolver);
+        $proxy = self::$proxy;
+        $resolveFactory = function ($key, $eval) use ($resolver, $proxy) {
+            return function ($val, $args) use ($key, $eval, $resolver, $proxy) {
+                $fieldResolver = new FieldResolver($val, $resolver, $proxy);
                 $result = $fieldResolver->resolve($key, $args);
                 if (!$result instanceof PersistentCollection) {
                     return $eval($result);
