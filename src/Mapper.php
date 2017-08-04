@@ -13,7 +13,8 @@ use Doctrine\Common\Annotations\CachedReader;
 use Doctrine\Common\Annotations\IndexedReader;
 use RahulJayaraman\DoctrineGraphQL\Annotations\RegisterField;
 
-class Mapper {
+class Mapper
+{
 
     /**
      * Doctrine EntityManager
@@ -72,16 +73,15 @@ class Mapper {
      * @param EntityManager $em
      * @param Callable $register
      * @param FileCacheReader | CachedReader $cachedAnnotationReader
-     * @param Callable $lookUp
+     * @param callable $lookUp
      */
     public static function setup(
         EntityManager $em,
-        Callable $register,
-        Callable $lookUp,
-        Callable $proxy = null,
+        callable $register,
+        callable $lookUp,
+        callable $proxy = null,
         $cachedAnnotationReader = null
-    )
-    {
+    ) {
         $identity = function ($arg) {
             return $arg;
         };
@@ -113,8 +113,7 @@ class Mapper {
     public static function extractType(
         string $className,
         EntityManager $entityManager
-    )
-    {
+    ) {
         $mapper = new Mapper($className);
         return $mapper->getType();
     }
@@ -191,7 +190,7 @@ class Mapper {
     {
         try {
             $type = $this->findType($typeName);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             $type = $typeGenFn($typeName);
             call_user_func_array(self::$register, array($typeName, $type));
         }
@@ -208,8 +207,7 @@ class Mapper {
     private function filterAndFormatMappings(
         array $mappings,
         array $blacklistedFieldNames
-    )
-    {
+    ) {
         $filtered = array_filter(
             $mappings,
             function ($mapping) use ($blacklistedFieldNames) {
@@ -243,11 +241,13 @@ class Mapper {
         $refClass = new \ReflectionClass($this->className);
         $class = __NAMESPACE__. '\Annotations\BlacklistField';
 
-        $filtered = array_filter($refClass->getProperties(),
-        function ($property) use ($class, $reader) {
-            $annotations = $reader->getPropertyAnnotations($property);
-            return isset($annotations[$class]);
-        });
+        $filtered = array_filter(
+            $refClass->getProperties(),
+            function ($property) use ($class, $reader) {
+                $annotations = $reader->getPropertyAnnotations($property);
+                return isset($annotations[$class]);
+            }
+        );
 
         return array_map(function ($property) {
             return $property->getName();
@@ -288,7 +288,7 @@ class Mapper {
     private function formatKeys(array $collection)
     {
         $transformed = [];
-        foreach($collection as $key => $item) {
+        foreach ($collection as $key => $item) {
             $transformed[$this->camelCase($key)] = $item;
         }
         return $transformed;
@@ -318,7 +318,7 @@ class Mapper {
     {
         $types = [];
 
-        foreach($associationMappings as $key => $association) {
+        foreach ($associationMappings as $key => $association) {
             $className = $association['targetEntity'];
             $isList = $this->isList($association['type']);
             $type = $this->buildFieldForClass($key, $className, $isList);
@@ -346,8 +346,7 @@ class Mapper {
         $isList,
         \ReflectionMethod $resolver = null,
         $args = null
-    )
-    {
+    ) {
         try {
             $mapper = new Mapper($className);
         } catch (\UnexpectedValueException $e) {
@@ -389,7 +388,7 @@ class Mapper {
     private function getFields($mappings)
     {
         $fields = [];
-        foreach($mappings as $key => $doctrineMetdata) {
+        foreach ($mappings as $key => $doctrineMetdata) {
             $dTypeKey = $doctrineMetdata['type'];
             $typeMapping = $this->getGraphQLTypeMapping($dTypeKey);
             if (is_null($typeMapping)) {
@@ -413,8 +412,7 @@ class Mapper {
         $reader = new IndexedReader($this->getAnnotationReader());
         $refClass = new \ReflectionClass($this->className);
         $fields = [];
-        foreach($refClass->getMethods() as $method)
-        {
+        foreach ($refClass->getMethods() as $method) {
             $annotations = $reader->getMethodAnnotations($method);
             $class = __NAMESPACE__. '\Annotations\RegisterField';
             if (isset($annotations[$class])) {
@@ -439,10 +437,11 @@ class Mapper {
      * @param \ReflectionMethod $method
      * @return array
      */
-    private function buildRegisteredField(String $key,
+    private function buildRegisteredField(
+        String $key,
         RegisterField $registration,
-        \ReflectionMethod $method)
-    {
+        \ReflectionMethod $method
+    ) {
         $typeMapping = $this->getGraphQLTypeMapping($registration->type);
         //Scalar return value
         if (!is_null($typeMapping)) {
@@ -532,12 +531,13 @@ class Mapper {
      * @param string $description
      * @return array
      */
-    private function buildField($key,
+    private function buildField(
+        $key,
         $typeMapping,
         \ReflectionMethod $resolver = null,
         $args = null,
-        $description = '')
-    {
+        $description = ''
+    ) {
         //Eval is used to resolve custom scalar types like date
         $proxy = self::$proxy;
         $resolveFactory = function ($key, $eval) use ($resolver, $proxy) {

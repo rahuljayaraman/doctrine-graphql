@@ -20,7 +20,7 @@ The mapper builds GraphQL types out of doctrine entities. It's built on top of [
 Here's an example. Consider the following schema
 
 ```
-Employee  
+Employee
 │
 └───Company (getCompanies)
 |
@@ -46,7 +46,7 @@ Mapper::extractType(Employee::class)
 
 #### Setup
 
-Setup accepts 3 args. Doctrine's EntityManager, a setter method & a getter method to a type store (a data structure which stores types). 
+Setup accepts 3 args. Doctrine's EntityManager, a setter method & a getter method to a type store (a data structure which stores types).
 
 ```php
 //Setup code, I use this in a laravel service provider
@@ -64,7 +64,7 @@ Mapper::setup(
 );
 ```
 
-`Cache` above could be replaced by any store. 
+`Cache` above could be replaced by any store.
 Eg. using [Folkloreatelier/laravel-graphql](https://github.com/Folkloreatelier/laravel-graphql)'s store
 
 ```php
@@ -105,7 +105,7 @@ For now, given a field name, say `fieldName`, the mapper will look for a `getFie
 
 #### Register additional fields
 
-For registering additional fields, on can use the RegisterField annotation. 
+For registering additional fields, one can use the RegisterField annotation.
 
 RegisterField accepts `name`, `type` and `args`.
 
@@ -145,7 +145,7 @@ use RahulJayaraman\DoctrineGraphQL\Annotations\BlacklistField;
  * @BlacklistField()
  */
 private $password;
-```    
+```
 
 ### Complementary Tools
 - [Use GraphQL with Laravel 5](https://github.com/Folkloreatelier/laravel-graphql)
