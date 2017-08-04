@@ -220,17 +220,6 @@ class Mapper
     }
 
     /**
-     * Checks if field name is blacklisted
-     *
-     * @param string $fieldName
-     * @return boolean
-     */
-    private function isBlacklisted(string $fieldName)
-    {
-        return in_array($fieldName, $this->blacklistedFieldNames);
-    }
-
-    /**
      * Get blacklisted fields for current entity
      *
      * @return array
