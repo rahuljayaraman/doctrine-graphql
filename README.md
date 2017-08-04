@@ -36,6 +36,12 @@ Mapper::extractType(Employee::class)
 
 #### NOTE: This library is not responsible for any of your GraphQL setup like setting up routes, root nodes etc.
 
+### TODO
+
+* [Support 'Relay Cursor Connections' ](https://github.com/rahuljayaraman/doctrine-graphql/issues/2)
+* [Remove Doctrine coupling](https://github.com/rahuljayaraman/doctrine-graphql/issues/4)
+* [Allow wrapping getter code](https://github.com/rahuljayaraman/doctrine-graphql/issues/3)
+
 ### Usage
 
 #### Setup
@@ -74,6 +80,7 @@ Mapper::setup(
     }
 );
 ```
+
 
 #### Extract type
 
