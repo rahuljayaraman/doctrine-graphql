@@ -2,7 +2,8 @@
 
 namespace RahulJayaraman\DoctrineGraphQL;
 
-class FieldResolver {
+class FieldResolver
+{
     private $originalInstance;
     private $instance;
     private $resolver;
@@ -10,9 +11,8 @@ class FieldResolver {
     public function __construct(
         $instance,
         \ReflectionMethod $resolver = null,
-        Callable $proxy
-    )
-    {
+        callable $proxy
+    ) {
         $this->originalInstance = $instance;
         $this->resolver = $resolver;
         $this->instance = $proxy($instance);

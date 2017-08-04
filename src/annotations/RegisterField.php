@@ -6,7 +6,8 @@ namespace RahulJayaraman\DoctrineGraphQL\Annotations;
  * @Annotation
  * @Target({"METHOD"})
  */
-class RegisterField {
+class RegisterField
+{
     /** @Required */
     public $type;
 
