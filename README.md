@@ -105,7 +105,7 @@ For now, given a field name, say `fieldName`, the mapper will look for a `getFie
 
 #### Register additional fields
 
-For registering additional fields, on can use the RegisterField annotation. 
+For registering additional fields, one can use the RegisterField annotation.
 
 RegisterField accepts `name`, `type` and `args`.
 
