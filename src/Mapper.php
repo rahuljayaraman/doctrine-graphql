@@ -63,7 +63,7 @@ class Mapper
     /**
      * typeMappings
      *
-     * @var array[string]GraphQLTypeMapping
+     * @var array[string]GraphQLTypeEval
      */
     private $typeMappings = [];
 
@@ -90,15 +90,6 @@ class Mapper
         self::$lookUp = $lookUp;
         self::$proxy = isset($proxy) ? $proxy : $identity;
         self::$cachedAnnotationReader = $cachedAnnotationReader;
-        self::setupAnnotations();
-    }
-
-    /**
-     * Setup annotations
-     *
-     */
-    private static function setupAnnotations()
-    {
         AnnotationRegistry::registerFile(__DIR__. "/annotations/Annotations.php");
     }
 
@@ -353,7 +344,7 @@ class Mapper
 
         return $this->buildField(
             $key,
-            new GraphQLTypeMapping($type),
+            new GraphQLTypeEval($type),
             $resolver,
             $args
         );
@@ -381,7 +372,7 @@ class Mapper
         $fields = [];
         foreach ($mappings as $key => $doctrineMetdata) {
             $dTypeKey = $doctrineMetdata['type'];
-            $typeMapping = $this->getGraphQLTypeMapping($dTypeKey);
+            $typeMapping = $this->getGraphQLType($dTypeKey);
             if (is_null($typeMapping)) {
                 throw new \UnexpectedValueException(
                     "The doctrine type ". $dTypeKey.
@@ -433,14 +424,14 @@ class Mapper
         RegisterField $registration,
         \ReflectionMethod $method
     ) {
-        $typeMapping = $this->getGraphQLTypeMapping($registration->type);
+        $typeMapping = $this->getGraphQLType($registration->type);
         //Scalar return value
         if (!is_null($typeMapping)) {
             return $this->buildField($key, $typeMapping, $method);
         }
 
         $args = array_map(function ($arg) {
-            $typeMapping = $this->getGraphQLTypeMapping($arg['type']);
+            $typeMapping = $this->getGraphQLType($arg['type']);
             $isNullable = $arg['nullable'];
             $type = $isNullable ? $typeMapping->type :
                 Type::nonNull($typeMapping->type);
@@ -516,7 +507,7 @@ class Mapper
      * Build a GraphQL field
      *
      * @param string $key
-     * @param GraphQLTypeMapping $typeMapping
+     * @param GraphQLTypeEval $typeMapping
      * @param ReflectionMethod $resolver
      * @param array $args
      * @param string $description
@@ -572,9 +563,9 @@ class Mapper
      * Get mapping of doctrine types => GraphQL types
      *
      * @param string $dKey
-     * @return GraphQLTypeMapping
+     * @return GraphQLTypeEval
      */
-    private function getGraphQLTypeMapping($dKey)
+    private function getGraphQLType($dKey)
     {
         if (empty($this->typeMappings)) {
             $this->setTypeMappings();
@@ -611,18 +602,18 @@ class Mapper
         };
 
         $this->typeMappings = [
-            'smallint' => new GraphQLTypeMapping(Type::int()),
-            'integer' => new GraphQLTypeMapping(Type::int()),
-            'float' => new GraphQLTypeMapping(Type::float()),
-            'text' => new GraphQLTypeMapping(Type::string()),
-            'string' => new GraphQLTypeMapping(Type::string()),
-            'boolean' => new GraphQLTypeMapping(Type::boolean()),
-            'array' => new GraphQLTypeMapping(Type::listOf(Type::string())),
-            'json_array' => new GraphQLTypeMapping(Type::string(), $jsonHandler),
-            'date' => new GraphQLTypeMapping(Type::string(), $dateEval),
-            'datetime' => new GraphQLTypeMapping(Type::string(), $dateEval),
-            'time' => new GraphQLTypeMapping(Type::string(), $dateEval),
-            'decimal' => new GraphQLTypeMapping(Type::float())
+            'smallint' => new GraphQLTypeEval(Type::int()),
+            'integer' => new GraphQLTypeEval(Type::int()),
+            'float' => new GraphQLTypeEval(Type::float()),
+            'text' => new GraphQLTypeEval(Type::string()),
+            'string' => new GraphQLTypeEval(Type::string()),
+            'boolean' => new GraphQLTypeEval(Type::boolean()),
+            'array' => new GraphQLTypeEval(Type::listOf(Type::string())),
+            'json_array' => new GraphQLTypeEval(Type::string(), $jsonHandler),
+            'date' => new GraphQLTypeEval(Type::string(), $dateEval),
+            'datetime' => new GraphQLTypeEval(Type::string(), $dateEval),
+            'time' => new GraphQLTypeEval(Type::string(), $dateEval),
+            'decimal' => new GraphQLTypeEval(Type::float())
         ];
     }
 

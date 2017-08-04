@@ -2,7 +2,7 @@
 
 namespace RahulJayaraman\DoctrineGraphQL;
 
-class GraphQLTypeMapping {
+class GraphQLTypeEval {
     /**
      * type
      *
