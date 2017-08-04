@@ -382,7 +382,7 @@ class Mapper
             $typeMapping = $this->getGraphQLTypeMapping($dTypeKey);
             if (is_null($typeMapping)) {
                 throw new \UnexpectedValueException(
-                    "The doctrine type ". $dKey.
+                    "The doctrine type ". $dTypeKey.
                     " has not been mapped correctly."
                 );
             }
