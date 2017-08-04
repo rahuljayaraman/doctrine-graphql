@@ -109,6 +109,8 @@ class Mapper
      * @param string $className
      * @param EntityManager $entityManager [deprecated]
      * @return ObjectType;
+     *
+     * @SuppressWarnings(PHPMD)
      */
     public static function extractType(
         string $className,
