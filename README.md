@@ -1,8 +1,8 @@
+### WARNING: This repo is just an experiment & is not maintained. Please use at your own risk. Suggest using https://github.com/Ecodev/graphql-doctrine instead
+
 ## Doctrine GraphQL Mapper
 
 _Builds GraphQL types out of doctrine entities_
-
-### WARNING: This repo is not stable yet. Please use at your own risk
 
 ### Installation
 ```
